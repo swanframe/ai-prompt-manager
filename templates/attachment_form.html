@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if action=='edit' else 'Add' }} Attachment - AI Prompt Manager{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('project.dashboard') }}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('project.view_project', project_id=project.id) }}">{{ project.name }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('prompt.view_prompt', project_id=project.id, prompt_id=prompt.id) }}">{{ prompt.title }}</a></li>
+    <li class="breadcrumb-item active">{{ 'Edit Attachment' if action=='edit' else 'New Attachment' }}</li>
+  </ol>
+</nav>
+
+<div class="card">
+  <div class="card-body">
+    <form method="POST" novalidate>
+      <div class="mb-3">
+        <label class="form-label">Filename *</label>
+        <input type="text" class="form-control" name="filename"
+               value="{{ (attachment.filename if attachment else '') }}" maxlength="255" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">MIME Type</label>
+        <select class="form-select" name="mime_type">
+          <option value="text/plain" {{ 'selected' if not attachment or attachment.mime_type=='text/plain' else '' }}>text/plain</option>
+          <option value="text/markdown" {{ 'selected' if attachment and attachment.mime_type=='text/markdown' else '' }}>text/markdown</option>
+          <option value="application/json" {{ 'selected' if attachment and attachment.mime_type=='application/json' else '' }}>application/json</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Content *</label>
+        <textarea class="form-control" name="content" rows="14" required>{{ (attachment.content if attachment else '') }}</textarea>
+        <div class="form-text">Text only. Large files are not allowed.</div>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('prompt.view_prompt', project_id=project.id, prompt_id=prompt.id) }}" class="btn btn-outline-secondary">Cancel</a>
+        <button class="btn btn-primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

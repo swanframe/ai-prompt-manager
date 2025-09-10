@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - AI Prompt Manager{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('project.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('project.list_projects') }}">Projects</a></li>
+        <li class="breadcrumb-item active">{{ project.name }}</li>
+    </ol>
+</nav>
+
+<!-- Project Header -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="d-flex align-items-center mb-3">
+            <i class="bi bi-folder text-primary fs-1 me-3"></i>
+            <div>
+                <h1 class="h2 mb-0">{{ project.name }}</h1>
+                <p class="text-muted mb-0">Created {{ project.created_at.strftime('%B %d, %Y') }}</p>
+            </div>
+        </div>
+        {% if project.description %}
+        <p class="lead text-muted">{{ project.description }}</p>
+        {% endif %}
+    </div>
+    <div class="col-md-4 text-md-end">
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('prompt.create_prompt', project_id=project.id) }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>New Prompt
+            </a>
+            <a href="{{ url_for('project.edit_project', project_id=project.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-pencil me-2"></i>Edit
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Project Stats -->
+<div class="row mb-4">
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <i class="bi bi-file-text text-primary fs-3"></i>
+                <h4 class="mt-2 mb-0">{{ project.get_prompts_count() }}</h4>
+                <small class="text-muted">Total Prompts</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prompts List -->
+{% if prompts %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Prompts in this Project</h5>
+        <span class="badge bg-primary">{{ prompts|length }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Preview</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prompt in prompts %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-file-text text-success me-2"></i>
+                                <strong>{{ prompt.title }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="text-muted">{{ prompt.get_content_preview(80) }}</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ prompt.created_at.strftime('%b %d, %Y') }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('prompt.view_prompt', project_id=project.id, prompt_id=prompt.id) }}" 
+                                   class="btn btn-outline-primary btn-sm" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('prompt.edit_prompt', project_id=project.id, prompt_id=prompt.id) }}" 
+                                   class="btn btn-outline-secondary btn-sm" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button class="btn btn-outline-info btn-sm" 
+                                        onclick="duplicatePrompt({{ project.id }}, {{ prompt.id }})" title="Duplicate">
+                                    <i class="bi bi-files"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" 
+                                        onclick="deletePrompt({{ project.id }}, {{ prompt.id }}, '{{ prompt.title }}')" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="text-center py-5">
+    <i class="bi bi-file-plus display-1 text-muted mb-3"></i>
+    <h3 class="text-muted">No Prompts Yet</h3>
+    <p class="text-muted mb-4">Start building your AI prompt collection</p>
+    <a href="{{ url_for('prompt.create_prompt', project_id=project.id) }}" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-circle me-2"></i>Create First Prompt
+    </a>
+</div>
+{% endif %}
+
+<!-- Delete Prompt Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Prompt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the prompt <strong id="promptTitle"></strong>?</p>
+                <p class="text-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2"></i>Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deletePrompt(projectId, promptId, promptTitle) {
+    document.getElementById('promptTitle').textContent = promptTitle;
+    document.getElementById('deleteForm').action = `/prompts/project/${projectId}/${promptId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+function duplicatePrompt(projectId, promptId) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/prompts/project/${projectId}/${promptId}/duplicate`;
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}

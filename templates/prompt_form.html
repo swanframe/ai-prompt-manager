@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if action == 'edit' else 'Create' }} Prompt - AI Prompt Manager{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('project.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('project.list_projects') }}">Projects</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('project.view_project', project_id=project.id) }}">{{ project.name }}</a></li>
+        {% if action == 'edit' %}
+        <li class="breadcrumb-item"><a href="{{ url_for('prompt.view_prompt', project_id=project.id, prompt_id=prompt.id) }}">{{ prompt.title }}</a></li>
+        <li class="breadcrumb-item active">Edit</li>
+        {% else %}
+        <li class="breadcrumb-item active">New Prompt</li>
+        {% endif %}
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-4">
+                    <i class="bi bi-{{ 'pencil' if action == 'edit' else 'plus-circle' }} text-success fs-3 me-3"></i>
+                    <div>
+                        <h1 class="h3 mb-0">{{ 'Edit' if action == 'edit' else 'Create New' }} Prompt</h1>
+                        <p class="text-muted mb-0">
+                            {% if action == 'edit' %}
+                            Update your prompt in {{ project.name }}
+                            {% else %}
+                            Add a new AI prompt to {{ project.name }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <form method="POST" novalidate>
+                    <div class="row">
+                        <div class="col-lg-4 mb-3">
+                            <label for="title" class="form-label">Prompt Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ prompt.title if action == 'edit' else request.form.title or '' }}" 
+                                   required maxlength="100" autofocus>
+                            <div class="form-text">Give your prompt a descriptive title</div>
+                        </div>
+                        <div class="col-lg-8 mb-3">
+                            <label class="form-label">Statistics</label>
+                            <div class="d-flex gap-3 text-muted small">
+                                <span>Words: <strong id="wordCount">0</strong></span>
+                                <span>Characters: <strong id="charCount">0</strong></span>
+                                <span>Est. Tokens: <strong id="tokenCount">0</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="content" class="form-label">Prompt Content *</label>
+                        <textarea class="form-control" id="content" name="content" rows="15" 
+                                  required maxlength="10000" 
+                                  placeholder="Enter your AI prompt here...&#10;&#10;Example:&#10;You are a helpful AI assistant. Please help me with...">{{ prompt.content if action == 'edit' else request.form.content or '' }}</textarea>
+                        <div class="form-text">Write your AI prompt (max 10,000 characters)</div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="mb-3">
+                        <label class="form-label">Quick Actions</label>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary" onclick="insertTemplate('system')">
+                                System Prompt
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="insertTemplate('roleplay')">
+                                Role-play
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="insertTemplate('analysis')">
+                                Analysis
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearContent()">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-{{ 'check-circle' if action == 'edit' else 'plus-circle' }} me-2"></i>
+                            {{ 'Update Prompt' if action == 'edit' else 'Create Prompt' }}
+                        </button>
+                        <a href="{{ url_for('prompt.view_prompt', project_id=project.id, prompt_id=prompt.id) if action == 'edit' else url_for('project.view_project', project_id=project.id) }}" 
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const contentTextarea = document.getElementById('content');
+const wordCountEl = document.getElementById('wordCount');
+const charCountEl = document.getElementById('charCount');
+const tokenCountEl = document.getElementById('tokenCount');
+
+// Update statistics
+function updateStats() {
+    const content = contentTextarea.value;
+    const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+    const chars = content.length;
+    const tokens = Math.round(chars / 4); // Rough estimate
+
+    wordCountEl.textContent = words;
+    charCountEl.textContent = chars;
+    tokenCountEl.textContent = tokens;
+}
+
+// Auto-resize textarea
+function autoResize() {
+    contentTextarea.style.height = 'auto';
+    contentTextarea.style.height = contentTextarea.scrollHeight + 'px';
+}
+
+// Insert templates
+function insertTemplate(type) {
+    let template = '';
+    
+    switch(type) {
+        case 'system':
+            template = 'You are a helpful AI assistant. Your role is to provide accurate, helpful, and informative responses to user queries.\n\nInstructions:\n- Be concise but thorough\n- Provide examples when helpful\n- Ask clarifying questions if needed\n\n';
+            break;
+        case 'roleplay':
+            template = 'You are [CHARACTER/ROLE]. You have the following characteristics:\n\n- [Trait 1]\n- [Trait 2]\n- [Trait 3]\n\nRespond to the user while staying in character. Your responses should reflect your personality and expertise.\n\n';
+            break;
+        case 'analysis':
+            template = 'Please analyze the following [CONTENT TYPE] and provide insights on:\n\n1. [Aspect 1]\n2. [Aspect 2]\n3. [Aspect 3]\n\nProvide specific examples and actionable recommendations.\n\n[CONTENT TO ANALYZE]\n\n';
+            break;
+    }
+    
+    const cursorPos = contentTextarea.selectionStart;
+    const textBefore = contentTextarea.value.substring(0, cursorPos);
+    const textAfter = contentTextarea.value.substring(cursorPos);
+    
+    contentTextarea.value = textBefore + template + textAfter;
+    contentTextarea.focus();
+    contentTextarea.setSelectionRange(cursorPos + template.length, cursorPos + template.length);
+    autoResize();
+    updateStats();
+}
+
+function clearContent() {
+    if (confirm('Are you sure you want to clear all content?')) {
+        contentTextarea.value = '';
+        autoResize(contentTextarea);
+        updateStats();
+        contentTextarea.focus();
+    }
+}
+
+// Event listeners
+contentTextarea.addEventListener('input', function() {
+    autoResize(this);
+    updateStats();
+});
+
+resultTextarea.addEventListener('input', function() {
+    autoResize(this);
+    updateStats();
+});
+
+contentTextarea.addEventListener('keydown', function(e) {
+    // Tab support in textarea
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + '\t' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 1;
+        updateStats();
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const title = document.getElementById('title').value.trim();
+    const content = document.getElementById('content').value.trim();
+    
+    if (!title) {
+        e.preventDefault();
+        document.getElementById('title').focus();
+        alert('Prompt title is required.');
+        return;
+    }
+    
+    if (!content) {
+        e.preventDefault();
+        document.getElementById('content').focus();
+        alert('Prompt content is required.');
+        return;
+    }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    updateStats();
+    autoResize(contentTextarea);
+});
+</script>
+{% endblock %}

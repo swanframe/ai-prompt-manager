@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Users - AI Prompt Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 mb-0">User Management</h1>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('user.create_user') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i>New User
+    </a>
+    {% endif %}
+</div>
+
+{% if users %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Projects</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-circle text-primary me-2"></i>
+                                <strong>{{ user.username }}</strong>
+                                {% if user.id == current_user.id %}
+                                <span class="badge bg-info ms-2">You</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if user.is_admin else 'secondary' }}">
+                                {{ 'Admin' if user.is_admin else 'User' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ user.get_projects_count() }}</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ user.created_at.strftime('%b %d, %Y') }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('user.view_user', user_id=user.id) }}" 
+                                   class="btn btn-outline-primary btn-sm" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('user.edit_user', user_id=user.id) }}" 
+                                   class="btn btn-outline-secondary btn-sm" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% if current_user.is_admin and user.id != current_user.id %}
+                                <button class="btn btn-outline-danger btn-sm" 
+                                        onclick="deleteUser({{ user.id }}, '{{ user.username }}')" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-people display-1 text-muted mb-3"></i>
+    <h3 class="text-muted">No Users Found</h3>
+    <p class="text-muted mb-4">No users have been created yet</p>
+    <a href="{{ url_for('user.create_user') }}" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-circle me-2"></i>Create User
+    </a>
+</div>
+{% endif %}
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the user <strong id="userName"></strong>?</p>
+                <p class="text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    This will permanently delete the user and all their projects and prompts.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2"></i>Delete User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteUser(userId, userName) {
+    document.getElementById('userName').textContent = userName;
+    document.getElementById('deleteForm').action = `/users/${userId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

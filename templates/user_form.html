@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if action == 'edit' else 'Create' }} User - AI Prompt Manager{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('project.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('user.list_users') }}">Users</a></li>
+        {% if action == 'edit' %}
+        <li class="breadcrumb-item"><a href="{{ url_for('user.view_user', user_id=user.id) }}">{{ user.username }}</a></li>
+        <li class="breadcrumb-item active">Edit</li>
+        {% else %}
+        <li class="breadcrumb-item active">Create</li>
+        {% endif %}
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-4">
+                    <i class="bi bi-{{ 'pencil' if action == 'edit' else 'plus-circle' }} text-primary fs-3 me-3"></i>
+                    <div>
+                        <h1 class="h3 mb-0">{{ 'Edit' if action == 'edit' else 'Create New' }} User</h1>
+                        <p class="text-muted mb-0">
+                            {{ 'Update user information' if action == 'edit' else 'Add a new user to the system' }}
+                        </p>
+                    </div>
+                </div>
+                
+                <form method="POST" novalidate>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username *</label>
+                        <input type="text" class="form-control" id="username" name="username" 
+                               value="{{ user.username if action == 'edit' else request.form.username or '' }}" 
+                               required minlength="3" maxlength="50" autofocus>
+                        <div class="form-text">At least 3 characters, letters, numbers, hyphens, and underscores only</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ user.email if action == 'edit' else request.form.email or '' }}" 
+                               required>
+                    </div>
+                    
+                    {% if action == 'create' %}
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password *</label>
+                        <input type="password" class="form-control" id="password" name="password" 
+                               required minlength="6">
+                        <div class="form-text">At least 6 characters</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm Password *</label>
+                        <input type="password" class="form-control" id="confirm_password" 
+                               name="confirm_password" required>
+                    </div>
+                    {% endif %}
+                    
+                    {% if current_user.is_admin %}
+                    <div class="mb-3 form-check form-switch">
+                        <input type="checkbox" class="form-check-input" id="is_admin" name="is_admin" 
+                               {{ 'checked' if action == 'edit' and user.is_admin else '' }}>
+                        <label class="form-check-label" for="is_admin">Administrator</label>
+                        <div class="form-text">Administrators have full access to all system features</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-{{ 'check-circle' if action == 'edit' else 'plus-circle' }} me-2"></i>
+                            {{ 'Update User' if action == 'edit' else 'Create User' }}
+                        </button>
+                        <a href="{{ url_for('user.view_user', user_id=user.id) if action == 'edit' else url_for('user.list_users') }}" 
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

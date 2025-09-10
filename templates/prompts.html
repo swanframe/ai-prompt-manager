@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - Prompts{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('project.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('project.list_projects') }}">Projects</a></li>
+        <li class="breadcrumb-item active">{{ project.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-0">{{ project.name }}</h1>
+        <p class="text-muted mb-0">{{ project.description or 'No description' }}</p>
+    </div>
+    <div>
+        <a href="{{ url_for('prompt.create_prompt', project_id=project.id) }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>New Prompt
+        </a>
+        <a href="{{ url_for('project.edit_project', project_id=project.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil me-2"></i>Edit Project
+        </a>
+    </div>
+</div>
+
+{% if prompts %}
+<div class="row">
+    {% for prompt in prompts %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 prompt-card">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-start mb-3">
+                    <i class="bi bi-file-text text-success fs-4 me-3"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="card-title mb-1">{{ prompt.title }}</h6>
+                        <small class="text-muted">{{ prompt.created_at.strftime('%b %d, %Y') }}</small>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-muted p-1" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('prompt.edit_prompt', project_id=project.id, prompt_id=prompt.id) }}">
+                                    <i class="bi bi-pencil me-2"></i>Edit
+                                </a>
+                            </li>
+                            <li>
+                                <button class="dropdown-item" onclick="duplicatePrompt({{ project.id }}, {{ prompt.id }})">
+                                    <i class="bi bi-files me-2"></i>Duplicate
+                                </button>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <button class="dropdown-item text-danger" onclick="deletePrompt({{ project.id }}, {{ prompt.id }}, '{{ prompt.title }}')">
+                                    <i class="bi bi-trash me-2"></i>Delete
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="prompt-preview mb-3 flex-grow-1">
+                    <small class="text-muted">{{ prompt.get_content_preview(100) }}</small>
+                </div>
+                
+                <div class="d-grid">
+                    <a href="{{ url_for('prompt.view_prompt', project_id=project.id, prompt_id=prompt.id) }}" 
+                       class="btn btn-outline-primary">
+                        <i class="bi bi-eye me-2"></i>View Prompt
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="text-center py-5">
+    <i class="bi bi-file-plus display-1 text-muted mb-3"></i>
+    <h3 class="text-muted">No Prompts Yet</h3>
+    <p class="text-muted mb-4">Start adding AI prompts to this project</p>
+    <a href="{{ url_for('prompt.create_prompt', project_id=project.id) }}" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-circle me-2"></i>Create First Prompt
+    </a>
+</div>
+{% endif %}
+
+<!-- Delete Prompt Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Prompt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the prompt <strong id="promptTitle"></strong>?</p>
+                <p class="text-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2"></i>Delete Prompt
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deletePrompt(projectId, promptId, promptTitle) {
+    document.getElementById('promptTitle').textContent = promptTitle;
+    document.getElementById('deleteForm').action = `/prompts/project/${projectId}/${promptId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+function duplicatePrompt(projectId, promptId) {
+    // Create form and submit
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/prompts/project/${projectId}/${promptId}/duplicate`;
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}

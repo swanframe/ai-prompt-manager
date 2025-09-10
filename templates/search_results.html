@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - AI Prompt Manager{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="h2 mb-2">Search Results</h1>
+    {% if search_term %}
+    <p class="text-muted">
+        Showing results for "<strong>{{ search_term }}</strong>" 
+        <span class="badge bg-secondary">{{ results|length }} found</span>
+    </p>
+    {% else %}
+    <p class="text-muted">Enter a search term to find prompts</p>
+    {% endif %}
+</div>
+
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-10">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" name="q" 
+                           value="{{ search_term }}" 
+                           placeholder="Search prompts by title or content..."
+                           autofocus>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Results -->
+{% if search_term %}
+    {% if results %}
+    <div class="row">
+        {% for prompt in results %}
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-start mb-2">
+                        <i class="bi bi-file-text text-success fs-4 me-3"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1">
+                                <a href="{{ url_for('prompt.view_prompt', project_id=prompt.project_id, prompt_id=prompt.id) }}" 
+                                   class="text-decoration-none">
+                                    {{ prompt.title }}
+                                </a>
+                            </h6>
+                            <small class="text-muted">
+                                In <a href="{{ url_for('project.view_project', project_id=prompt.project_id) }}" 
+                                      class="text-decoration-none">{{ prompt.project.name }}</a>
+                                • {{ prompt.created_at.strftime('%b %d, %Y') }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="prompt-preview mb-3">
+                        <p class="text-muted mb-0">{{ prompt.get_content_preview(150) }}</p>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('prompt.view_prompt', project_id=prompt.project_id, prompt_id=prompt.id) }}" 
+                               class="btn btn-outline-primary">
+                                <i class="bi bi-eye me-1"></i>View
+                            </a>
+                            <a href="{{ url_for('prompt.edit_prompt', project_id=prompt.project_id, prompt_id=prompt.id) }}" 
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-pencil me-1"></i>Edit
+                            </a>
+                        </div>
+                        <small class="text-muted">{{ prompt.content|length }} chars</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- No Results -->
+    <div class="text-center py-5">
+        <i class="bi bi-search display-1 text-muted mb-3"></i>
+        <h3 class="text-muted">No Results Found</h3>
+        <p class="text-muted mb-4">
+            No prompts found matching "<strong>{{ search_term }}</strong>".
+            <br>Try a different search term or browse your projects.
+        </p>
+        <div class="d-flex gap-2 justify-content-center">
+            <a href="{{ url_for('project.list_projects') }}" class="btn btn-outline-primary">
+                <i class="bi bi-folder me-2"></i>Browse Projects
+            </a>
+            <a href="{{ url_for('project.create_project') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Create Project
+            </a>
+        </div>
+    </div>
+    {% endif %}
+{% endif %}
+
+<!-- Search Tips -->
+{% if not search_term or not results %}
+<div class="mt-5">
+    <div class="card bg-light">
+        <div class="card-body">
+            <h6 class="card-title">
+                <i class="bi bi-lightbulb text-warning me-2"></i>Search Tips
+            </h6>
+            <ul class="mb-0">
+                <li>Search terms are case-insensitive</li>
+                <li>Search looks through both prompt titles and content</li>
+                <li>Try shorter, more specific keywords</li>
+                <li>Use different variations of your search terms</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Highlight search terms in results
+document.addEventListener('DOMContentLoaded', function() {
+    const searchTerm = '{{ search_term }}';
+    if (searchTerm && searchTerm.length > 0) {
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        
+        // Highlight in titles and content previews
+        document.querySelectorAll('.card-title a, .prompt-preview p').forEach(element => {
+            if (element.textContent) {
+                element.innerHTML = element.textContent.replace(regex, '<mark>$1</mark>');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
