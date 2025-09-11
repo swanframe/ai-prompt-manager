@@ -2,6 +2,16 @@
 
 AI Prompt Manager is a web-based application designed to help users organize, manage, and collaborate on AI prompts. It allows users to create projects, store prompts with associated responses (like conversation history), attach text-based files, and perform searches across their content. The app supports user authentication, role-based access (admin and standard users), and a clean dashboard for overview.
 
+## 📑 Table of Contents
+- [Key Features](#key-features)
+- [Technologies Used](#technologies-used)
+- [Project Structure](#project-structure)
+- [Installation Guide](#installation-guide)
+- [Database Setup](#database-setup)
+- [User Manual](#user-manual)
+- [License](#license)
+- [Contact](#contact)
+
 ## Key Features
 
 - **User Authentication**: Secure login, registration, and logout with password hashing.
