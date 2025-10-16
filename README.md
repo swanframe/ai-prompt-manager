@@ -209,4 +209,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-For questions or contributions, contact the maintainer at [211110108@student.mercubuana-yogya.ac.id] or open an issue on GitHub.
+For questions or contributions, contact the maintainer at [211110108@student.mercubuana-yogya.ac.id](mailto:211110108@student.mercubuana-yogya.ac.id) or open an issue on GitHub.
